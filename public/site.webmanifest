@@ -1,0 +1,16 @@
+{
+  "name": "Third Shelf — Multi-Category Curated Store",
+  "short_name": "Third Shelf",
+  "description": "Thoughtfully selected technology, home and everyday essentials.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f5f0",
+  "theme_color": "#252522",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

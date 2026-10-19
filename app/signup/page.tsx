@@ -3,8 +3,9 @@
 import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, Info, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, Info, CheckCircle2, ShoppingBag, Heart, ShieldCheck } from "lucide-react";
 import { AuthIllustration } from "@/components/auth-illustration";
+import { useAuth } from "@/components/auth-provider";
 
 function safeRedirectPath(target: string | null): string {
   if (!target) return "/";
@@ -17,7 +18,9 @@ function safeRedirectPath(target: string | null): string {
 function SignupFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refresh } = useAuth();
   const rawRedirect = searchParams.get("redirectTo");
+  const reason = searchParams.get("reason");
   const redirectTo = safeRedirectPath(rawRedirect);
 
   const [firstName, setFirstName] = useState("");
@@ -125,10 +128,21 @@ function SignupFormContent() {
       } else if (!res.ok || data.error) {
         setErrors({ general: data.error || "Unable to create your account. Please try again." });
       } else if (data.success) {
-        setSuccessMessage("Your account has been created successfully. Redirecting you to sign in...");
-        setTimeout(() => {
-          router.push(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
-        }, 1800);
+        if (data.autoLoggedIn) {
+          await refresh();
+          setSuccessMessage("Account created and signed in! Returning you to your selection...");
+          setTimeout(() => {
+            router.push(redirectTo);
+          }, 1200);
+        } else {
+          setSuccessMessage("Your account has been created successfully. Redirecting you to sign in...");
+          setTimeout(() => {
+            const loginTarget = rawRedirect
+              ? `/login?redirectTo=${encodeURIComponent(rawRedirect)}${reason ? `&reason=${reason}` : ""}`
+              : "/login";
+            router.push(loginTarget);
+          }, 1500);
+        }
       }
     } catch {
       setErrors({ general: "Network error occurred. Please check your connection and try again." });
@@ -137,13 +151,16 @@ function SignupFormContent() {
     }
   };
 
-  const loginHref = rawRedirect ? `/login?redirectTo=${encodeURIComponent(rawRedirect)}` : "/login";
+  const loginParams = new URLSearchParams();
+  if (rawRedirect) loginParams.set("redirectTo", rawRedirect);
+  if (reason) loginParams.set("reason", reason);
+  const loginHref = loginParams.toString() ? `/login?${loginParams.toString()}` : "/login";
 
   return (
     <div className="auth-page-container">
       {/* Return to shop navigation */}
       <div className="auth-back-nav">
-        <Link href="/" className="auth-back-link">
+        <Link href="/collections/all" className="auth-back-link">
           <ArrowLeft size={15} strokeWidth={1.5} />
           <span>Continue shopping</span>
         </Link>
@@ -168,6 +185,32 @@ function SignupFormContent() {
                 Create your Third Shelf account and make your next discovery a little easier.
               </p>
             </div>
+
+            {/* Contextual Action Gate Banner */}
+            {reason === "cart" && (
+              <div className="auth-alert-notice" role="status" style={{ marginBottom: 16 }}>
+                <ShoppingBag size={16} />
+                <div>
+                  <strong>Create an account to shop.</strong> Sign up in seconds to add pieces to your shopping bag. We&apos;ll return you right back to your item.
+                </div>
+              </div>
+            )}
+            {reason === "favourites" && (
+              <div className="auth-alert-notice" role="status" style={{ marginBottom: 16 }}>
+                <Heart size={16} />
+                <div>
+                  <strong>Save your favourites.</strong> Create an account to permanently save pieces to your personal sanctuary.
+                </div>
+              </div>
+            )}
+            {reason === "checkout" && (
+              <div className="auth-alert-notice" role="status" style={{ marginBottom: 16 }}>
+                <ShieldCheck size={16} />
+                <div>
+                  <strong>Secure checkout.</strong> Create an account to proceed to verified Shopify checkout.
+                </div>
+              </div>
+            )}
 
             {/* Preview notice banner */}
             <div className="auth-preview-banner">

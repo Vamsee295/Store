@@ -616,3 +616,18 @@ export function EverydayIllustration({ className = "" }: IllustrationProps) {
     </svg>
   );
 }
+
+export function CategoryIllustration({
+  category,
+  className = "",
+}: {
+  category: string;
+  className?: string;
+}) {
+  const norm = (category || "").toLowerCase();
+  if (norm.includes("tech")) return <TechnologyIllustration className={className} />;
+  if (norm.includes("home")) return <HomeIllustration className={className} />;
+  if (norm.includes("travel")) return <TravelIllustration className={className} />;
+  return <EverydayIllustration className={className} />;
+}
+

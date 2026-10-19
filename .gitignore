@@ -1,8 +1,11 @@
 node_modules
 .next
 out
+# Environment variables
 .env
-.env.local
+.env.*
+!.env.example
+
 .vercel
 *.tsbuildinfo
 .DS_Store

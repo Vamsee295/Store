@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 40" width="240" height="40">
+  <!-- Three shelf mark -->
+  <g fill="#252522">
+    <rect x="4" y="11" width="18" height="2.4" rx="1.2"/>
+    <rect x="1" y="18.8" width="24" height="2.4" rx="1.2"/>
+    <rect x="4" y="26.6" width="18" height="2.4" rx="1.2"/>
+  </g>
+  <!-- Brand wordmark -->
+  <text x="36" y="21" font-family="Georgia, 'Playfair Display', 'Times New Roman', serif" font-size="15" font-weight="500" letter-spacing="4.5" fill="#252522" dominant-baseline="middle">THIRD SHELF</text>
+</svg>

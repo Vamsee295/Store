@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { customerCreate, shopifyConfigured } from "@/lib/shopify/client";
+import { cookies } from "next/headers";
+import { customerCreate, customerAccessTokenCreate, shopifyConfigured } from "@/lib/shopify/client";
 
 export async function POST(req: Request) {
   try {
@@ -90,8 +91,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
 
+    // Attempt immediate customer session creation
+    try {
+      const loginRes = await customerAccessTokenCreate({ email, password });
+      const token = loginRes?.customerAccessTokenCreate?.customerAccessToken?.accessToken;
+
+      if (token) {
+        const cookieStore = await cookies();
+        cookieStore.set("third_shelf_customer_token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 30 * 24 * 60 * 60, // 30 days
+        });
+
+        return NextResponse.json({
+          success: true,
+          autoLoggedIn: true,
+          message: "Account created and signed in successfully."
+        });
+      }
+    } catch (loginErr) {
+      console.warn("Auto-login after signup deferred:", loginErr);
+    }
+
     return NextResponse.json({
       success: true,
+      autoLoggedIn: false,
       message: "Account created successfully. Please sign in."
     });
   } catch (err) {

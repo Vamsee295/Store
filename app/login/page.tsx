@@ -3,8 +3,9 @@
 import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, Info } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Loader2, AlertCircle, Info, Compass, ArrowRight, ShoppingBag, Heart, ShieldCheck } from "lucide-react";
 import { AuthIllustration } from "@/components/auth-illustration";
+import { useAuth } from "@/components/auth-provider";
 
 function safeRedirectPath(target: string | null): string {
   if (!target) return "/";
@@ -18,7 +19,9 @@ function safeRedirectPath(target: string | null): string {
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refresh } = useAuth();
   const rawRedirect = searchParams.get("redirectTo");
+  const reason = searchParams.get("reason");
   const redirectTo = safeRedirectPath(rawRedirect);
 
   const [email, setEmail] = useState("");
@@ -26,7 +29,9 @@ function LoginFormContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
   const [loading, setLoading] = useState(false);
+  const [enteringPreview, setEnteringPreview] = useState(false);
   const [previewNotice, setPreviewNotice] = useState<string | null>(null);
+  const isDev = process.env.NODE_ENV === "development";
 
   const validate = () => {
     const errs: { email?: string; password?: string } = {};
@@ -74,6 +79,7 @@ function LoginFormContent() {
         setErrors({ general: data.error || "Unable to sign in. Please verify your credentials." });
       } else if (data.success) {
         // Successful login with live Shopify customer token in httpOnly cookie
+        await refresh();
         router.push(redirectTo);
       }
     } catch {
@@ -83,14 +89,41 @@ function LoginFormContent() {
     }
   };
 
-  const signupHref = rawRedirect ? `/signup?redirectTo=${encodeURIComponent(rawRedirect)}` : "/signup";
+  const handleEnterPreview = async () => {
+    setEnteringPreview(true);
+    try {
+      const res = await fetch("/api/auth/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        await refresh();
+        // Redirect to homepage or Shop All per requirement 1:
+        // "Redirect me to the homepage or Shop All page after entering preview mode."
+        const target = redirectTo && redirectTo !== "/login" && redirectTo !== "/" ? redirectTo : "/collections/all";
+        router.push(target);
+      } else {
+        router.push("/collections/all");
+      }
+    } catch {
+      router.push("/collections/all");
+    } finally {
+      setEnteringPreview(false);
+    }
+  };
+
+  const signupParams = new URLSearchParams();
+  if (rawRedirect) signupParams.set("redirectTo", rawRedirect);
+  if (reason) signupParams.set("reason", reason);
+  const signupHref = signupParams.toString() ? `/signup?${signupParams.toString()}` : "/signup";
   const forgotHref = rawRedirect ? `/forgot-password?redirectTo=${encodeURIComponent(rawRedirect)}` : "/forgot-password";
 
   return (
     <div className="auth-page-container">
       {/* Return to shop navigation */}
       <div className="auth-back-nav">
-        <Link href="/" className="auth-back-link">
+        <Link href="/collections/all" className="auth-back-link">
           <ArrowLeft size={15} strokeWidth={1.5} />
           <span>Continue shopping</span>
         </Link>
@@ -113,6 +146,40 @@ function LoginFormContent() {
               <h1 className="display auth-heading">Good to see you again.</h1>
               <p className="auth-subheading">Sign in to pick up where you left off.</p>
             </div>
+
+            {/* Contextual Action Gate Banner */}
+            {reason === "cart" && (
+              <div className="auth-alert-notice" role="status" style={{ marginBottom: 16 }}>
+                <ShoppingBag size={16} />
+                <div>
+                  <strong>Account required to shop.</strong> Please sign in or create an account to add items to your shopping bag. We&apos;ll return you right back to your item.
+                </div>
+              </div>
+            )}
+            {reason === "favourites" && (
+              <div className="auth-alert-notice" role="status" style={{ marginBottom: 16 }}>
+                <Heart size={16} />
+                <div>
+                  <strong>Save to favourites.</strong> Please sign in or create an account to save pieces to your personal sanctuary.
+                </div>
+              </div>
+            )}
+            {reason === "checkout" && (
+              <div className="auth-alert-notice" role="status" style={{ marginBottom: 16 }}>
+                <ShieldCheck size={16} />
+                <div>
+                  <strong>Secure checkout.</strong> Please sign in to your account before proceeding to Shopify checkout.
+                </div>
+              </div>
+            )}
+            {reason === "account" && (
+              <div className="auth-alert-notice" role="status" style={{ marginBottom: 16 }}>
+                <Info size={16} />
+                <div>
+                  <strong>Customer sanctuary.</strong> Please sign in to view your verified orders, dispatches, and saved delivery addresses.
+                </div>
+              </div>
+            )}
 
             {/* Preview notice banner */}
             <div className="auth-preview-banner">
@@ -219,6 +286,56 @@ function LoginFormContent() {
                   <span>Sign in</span>
                 )}
               </button>
+
+              {/* Temporary Development Preview Mode Bypass */}
+              {isDev && (
+                <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "4px 0" }}>
+                    <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                    <span style={{ fontSize: 9.5, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--muted)" }}>
+                      Dev inspection
+                    </span>
+                    <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleEnterPreview}
+                    disabled={enteringPreview}
+                    className="btn btn-secondary"
+                    style={{
+                      width: "100%",
+                      justifyContent: "center",
+                      padding: "12px 18px",
+                      fontSize: 12.5,
+                      fontWeight: 500,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 8,
+                      background: "rgba(238, 232, 220, 0.45)",
+                      borderColor: "var(--line)",
+                      color: "#252522",
+                    }}
+                  >
+                    {enteringPreview ? (
+                      <>
+                        <Loader2 size={15} className="spinner" />
+                        <span>Entering preview…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Compass size={15} strokeWidth={1.5} />
+                        <span>Enter Preview Store</span>
+                        <ArrowRight size={14} />
+                      </>
+                    )}
+                  </button>
+
+                  <p style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", margin: 0, lineHeight: 1.5 }}>
+                    Temporary development access to inspect catalog & shopping flow without Shopify customer login.
+                  </p>
+                </div>
+              )}
             </form>
 
             {/* Footer Navigation Links */}

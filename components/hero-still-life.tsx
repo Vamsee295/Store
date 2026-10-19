@@ -24,8 +24,8 @@ interface HotspotConfig {
   num: string;
   categoryLabel: string;
   defaultTitle: string;
-  defaultPrice: number;
-  defaultHandle: string;
+  categoryHref: string;
+  defaultPrice?: number;
   x: number; // percentage from left
   y: number; // percentage from top
   cardPosition?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
@@ -37,9 +37,8 @@ const HOTSPOTS: HotspotConfig[] = [
     categoryKey: "tech",
     num: "01",
     categoryLabel: "TECHNOLOGY",
-    defaultTitle: "Minimal Device Stand",
-    defaultPrice: 24.0,
-    defaultHandle: "minimal-device-stand",
+    defaultTitle: "Technology & Desk",
+    categoryHref: "/collections/technology",
     x: 39,
     y: 52,
     cardPosition: "top-right",
@@ -49,9 +48,8 @@ const HOTSPOTS: HotspotConfig[] = [
     categoryKey: "travel",
     num: "02",
     categoryLabel: "TRAVEL",
-    defaultTitle: "Daily Carry Pouch",
-    defaultPrice: 18.0,
-    defaultHandle: "daily-carry-pouch",
+    defaultTitle: "Travel Essentials",
+    categoryHref: "/collections/travel",
     x: 62,
     y: 57,
     cardPosition: "top-left",
@@ -60,10 +58,9 @@ const HOTSPOTS: HotspotConfig[] = [
     id: "home-tray",
     categoryKey: "home",
     num: "03",
-    categoryLabel: "HOME",
-    defaultTitle: "Everyday Catchall Tray",
-    defaultPrice: 16.0,
-    defaultHandle: "everyday-catchall-tray",
+    categoryLabel: "HOME ESSENTIALS",
+    defaultTitle: "Home Essentials",
+    categoryHref: "/collections/home-essentials",
     x: 67,
     y: 77,
     cardPosition: "top-left",
@@ -72,10 +69,9 @@ const HOTSPOTS: HotspotConfig[] = [
     id: "everyday-bottle",
     categoryKey: "everyday",
     num: "04",
-    categoryLabel: "EVERYDAY",
-    defaultTitle: "Everyday Bottle",
-    defaultPrice: 22.0,
-    defaultHandle: "everyday-water-bottle",
+    categoryLabel: "EVERYDAY FINDS",
+    defaultTitle: "Everyday Finds",
+    categoryHref: "/collections/everyday-finds",
     x: 87,
     y: 47,
     cardPosition: "top-left",
@@ -308,8 +304,7 @@ export function HeroStillLife({ products }: HeroStillLifeProps) {
           {HOTSPOTS.map((spot) => {
             const product = products?.[spot.categoryKey];
             const title = product?.title || spot.defaultTitle;
-            const price = product?.price ?? spot.defaultPrice;
-            const handle = product?.handle || spot.defaultHandle;
+            const destinationHref = product?.handle ? `/products/${product.handle}` : spot.categoryHref;
             const isHovered = activePin === spot.id;
 
             return (
@@ -328,8 +323,12 @@ export function HeroStillLife({ products }: HeroStillLifeProps) {
               >
                 {/* Hotspot Target Button */}
                 <Link
-                  href={`/products/${handle}`}
-                  aria-label={`View ${title}, ${spot.categoryLabel}, $${price.toFixed(2)}`}
+                  href={destinationHref}
+                  aria-label={
+                    product
+                      ? `View ${title}, ${spot.categoryLabel}, $${product.price.toFixed(2)}`
+                      : `Explore ${title} (${spot.categoryLabel})`
+                  }
                   style={{
                     position: "relative",
                     display: "flex",
@@ -407,7 +406,7 @@ export function HeroStillLife({ products }: HeroStillLifeProps) {
                   }}
                 >
                   <Link
-                    href={`/products/${handle}`}
+                    href={destinationHref}
                     style={{
                       display: "block",
                       background: "rgba(255, 255, 255, 0.95)",
@@ -464,7 +463,7 @@ export function HeroStillLife({ products }: HeroStillLifeProps) {
                         fontWeight: 500,
                       }}
                     >
-                      ${price.toFixed(2)}
+                      {product?.price != null ? `$${product.price.toFixed(2)}` : "Explore collection →"}
                     </div>
                   </Link>
                 </div>
@@ -530,14 +529,13 @@ export function HeroStillLife({ products }: HeroStillLifeProps) {
           {HOTSPOTS.map((spot) => {
             const product = products?.[spot.categoryKey];
             const title = product?.title || spot.defaultTitle;
-            const price = product?.price ?? spot.defaultPrice;
-            const handle = product?.handle || spot.defaultHandle;
+            const destinationHref = product?.handle ? `/products/${product.handle}` : spot.categoryHref;
             const isHovered = activePin === spot.id;
 
             return (
               <Link
                 key={spot.id}
-                href={`/products/${handle}`}
+                href={destinationHref}
                 className="hero-chip-item"
                 style={{
                   display: "inline-flex",
@@ -574,7 +572,11 @@ export function HeroStillLife({ products }: HeroStillLifeProps) {
                   {spot.num}
                 </span>
                 <span>{title}</span>
-                <span style={{ opacity: 0.65, fontSize: 10 }}>${price.toFixed(0)}</span>
+                {product?.price != null ? (
+                  <span style={{ opacity: 0.65, fontSize: 10 }}>${product.price.toFixed(0)}</span>
+                ) : (
+                  <ArrowUpRight size={11} style={{ opacity: 0.65 }} />
+                )}
               </Link>
             );
           })}

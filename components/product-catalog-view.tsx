@@ -166,7 +166,7 @@ export function ProductCatalogView({
           <div className="catalog-header-layout">
             <div className="catalog-header-text">
               <span className="eyebrow catalog-eyebrow">
-                {isShopAll ? "Curated Curation · Vol. 01" : "Category Edit"}
+                {isShopAll ? "Considered Edit · Archive Vol. 01" : "Category Edit"}
               </span>
               <h1 className="display catalog-title">{pageTitle}</h1>
               <p className="catalog-description">{pageDescription}</p>
@@ -174,8 +174,8 @@ export function ProductCatalogView({
 
             <div className="catalog-header-badge">
               <span className="catalog-count-pill">
-                {filteredProducts.length}{" "}
-                {filteredProducts.length === 1 ? "considered find" : "considered finds"}
+                <strong>{filteredProducts.length}</strong>{" "}
+                {filteredProducts.length === 1 ? "find curated" : "finds curated"}
               </span>
             </div>
           </div>

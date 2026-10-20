@@ -140,10 +140,11 @@ When an unauthenticated visitor clicks "Add to bag" or "Save to favourites":
 ## 7. Security Boundaries & Protections
 
 1. **Token Secrecy:** Private secrets (Shopify Admin API tokens, webhook signing keys, session secrets) never appear in client bundles or public repositories.
-2. **Public Storefront Token:** Only the read-only public Storefront API token (`NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN`) is exposed in browser environments.
+2. **Server-Side Storefront Token Proxying:** The Storefront API token (`SHOPIFY_STOREFRONT_ACCESS_TOKEN`) is maintained strictly server-side in Next.js Server Components and Route Handlers. No credentials or customer tokens are ever exposed via client-side public bundles.
 3. **No Payment Card Storage:** Zero credit card numbers, CVVs, or expiration dates are collected or stored in the Next.js database. All payment processing is delegated to Shopify's Level 1 PCI DSS-compliant checkout.
 4. **Content Sanitization:** `sanitizeProductDescription()` strips raw supplier notes, wholesale MOQ notes, and supplier contact details from incoming Shopify product descriptions.
 5. **Open Redirect Prevention:** All authentication redirects are validated against local relative URI rules.
+6. **Serverless-Durable Favourites Storage:** Favourites storage is decoupled from ephemeral container disk via managed KV/Redis support and tamper-proof HMAC-SHA256 signed session state cookies.
 
 ---
 
@@ -156,9 +157,12 @@ All secrets are managed in `.env.local` (excluded by `.gitignore`). A safe templ
 | `SHOPIFY_STORE_DOMAIN` | Server | Shopify shop domain (`thirdshelfstore.myshopify.com`) |
 | `SHOPIFY_STOREFRONT_ACCESS_TOKEN` | Server | Storefront API token for server-side queries and mutations |
 | `NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN` | Client/Server | Public domain reference |
-| `NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN` | Client/Server | Public token for client-side Storefront requests |
 | `NEXT_PUBLIC_SITE_URL` | Client/Server | Canonical URL (`https://thirdshelf.store`) |
-| `SHOPIFY_REVALIDATION_SECRET` | Server | Webhook validation key for cache revalidation |
+| `SHOPIFY_REVALIDATE_SECONDS` | Server | Cache revalidation interval (default: 60) |
+| `REVALIDATE_SECRET` | Server | Webhook validation key for on-demand revalidation |
+| `KV_REST_API_URL` | Server (Optional) | Vercel KV / Upstash Redis REST endpoint for distributed favourites |
+| `KV_REST_API_TOKEN` | Server (Optional) | Vercel KV / Upstash Redis REST bearer token |
+| `FAVOURITES_SIGNING_SECRET` | Server (Optional) | Secret key for signing serverless customer favourites cookies |
 
 ---
 

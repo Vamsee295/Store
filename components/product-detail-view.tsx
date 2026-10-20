@@ -312,9 +312,6 @@ export function ProductDetailView({ product, relatedProducts, demoMode }: Produc
                       <img src={item.url} alt="" />
                     )}
                   </div>
-                  <span className="pdp-thumb-label">
-                    {item.isIllustration ? "Artwork" : `View ${idx + 1}`}
-                  </span>
                 </button>
               ))}
             </div>
@@ -378,7 +375,21 @@ export function ProductDetailView({ product, relatedProducts, demoMode }: Produc
             </div>
 
             {/* Product Story / Description */}
-            <p className="pdp-narrative">{product.description}</p>
+            <div className="pdp-narrative">
+              {product.description.split("\n\n").map((block, i) => {
+                if (block.includes("•")) {
+                  const items = block.split("\n").filter(Boolean);
+                  return (
+                    <ul key={i} className="pdp-narrative-list">
+                      {items.map((item, j) => (
+                        <li key={j}>{item.replace(/^•\s*/, "")}</li>
+                      ))}
+                    </ul>
+                  );
+                }
+                return <p key={i}>{block}</p>;
+              })}
+            </div>
 
             {/* Variant Picker (Colorways / Sizes) */}
             {product.variants && product.variants.length > 0 && (
@@ -472,7 +483,7 @@ export function ProductDetailView({ product, relatedProducts, demoMode }: Produc
                 type="button"
                 onClick={handleAddToCart}
                 disabled={!(selectedVariant ? selectedVariant.available : product.available)}
-                className={`btn pdp-add-to-bag-btn ${added ? "added-state" : ""}`}
+                className={`pdp-add-to-bag-btn ${added ? "added-state" : ""}`}
               >
                 {added ? (
                   <>
@@ -496,21 +507,7 @@ export function ProductDetailView({ product, relatedProducts, demoMode }: Produc
                 onClick={handleToggleFavourite}
                 aria-label={isFav ? "Remove from favourites" : "Save to favourites"}
                 title={isFav ? "Saved in favourites" : "Save to favourites"}
-                className="btn btn-secondary pdp-fav-btn"
-                style={{
-                  padding: "0 16px",
-                  minWidth: 48,
-                  height: 48,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderColor: isFav ? "#c2410c" : "var(--line)",
-                  color: isFav ? "#c2410c" : "inherit",
-                  background: isFav ? "rgba(194, 65, 12, 0.08)" : "transparent",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
+                className={`pdp-fav-btn ${isFav ? "is-active" : ""}`}
               >
                 <Heart size={18} fill={isFav ? "#c2410c" : "none"} strokeWidth={1.5} />
               </button>

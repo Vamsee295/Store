@@ -26,41 +26,11 @@ export function ProductCard({ product }: { product: Product }) {
               loading="lazy"
               decoding="async"
               onError={() => setImgError(true)}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display: "block",
-              }}
             />
           ) : (
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#ece8e0",
-                color: "var(--muted)",
-                padding: 16,
-                textAlign: "center",
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: "var(--serif)",
-                  fontSize: 16,
-                  color: "#5d564b",
-                  marginBottom: 4,
-                }}
-              >
-                Third Shelf
-              </span>
-              <span style={{ fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase" }}>
-                Image in studio
-              </span>
+            <div className="product-image-fallback">
+              <span className="product-fallback-brand">Third Shelf</span>
+              <span className="product-fallback-sub">Image in studio</span>
             </div>
           )
         ) : (
@@ -96,100 +66,42 @@ export function ProductCard({ product }: { product: Product }) {
           }}
           aria-label={isFav ? "Remove from favourites" : "Save to favourites"}
           title={isFav ? "Saved in favourites" : "Save to favourites"}
-          style={{
-            position: "absolute",
-            right: 10,
-            top: 10,
-            background: "rgba(247, 245, 240, 0.94)",
-            backdropFilter: "blur(6px)",
-            border: "1px solid rgba(0,0,0,0.06)",
-            borderRadius: "50%",
-            width: 30,
-            height: 30,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            zIndex: 4,
-            color: isFav ? "#c2410c" : "#666",
-            transition: "transform 0.15s ease, background 0.15s ease",
-          }}
+          className={`product-card-fav-btn ${isFav ? "is-fav" : ""}`}
         >
           <Heart size={14} fill={isFav ? "#c2410c" : "none"} strokeWidth={1.5} />
         </button>
 
         {product.badge && (
-          <span
-            style={{
-              position: "absolute",
-              left: 12,
-              top: 12,
-              background: "var(--paper)",
-              padding: "7px 9px",
-              fontSize: 9,
-              letterSpacing: ".08em",
-              textTransform: "uppercase",
-              zIndex: 2,
-            }}
-          >
+          <span className="product-card-badge">
             {product.badge}
           </span>
         )}
 
         {product.compareAt && product.compareAt > product.price && !product.badge && (
-          <span
-            style={{
-              position: "absolute",
-              left: 12,
-              top: 12,
-              background: "var(--paper)",
-              padding: "7px 9px",
-              fontSize: 9,
-              letterSpacing: ".08em",
-              textTransform: "uppercase",
-              zIndex: 2,
-            }}
-          >
+          <span className="product-card-badge">
             Special Edit
           </span>
         )}
 
         {!product.available && (
-          <span
-            style={{
-              position: "absolute",
-              left: 12,
-              bottom: 12,
-              background: "var(--white)",
-              padding: "7px 9px",
-              fontSize: 9,
-              zIndex: 2,
-            }}
-          >
+          <span className="product-card-badge product-card-badge-soldout">
             Sold Out
           </span>
         )}
       </div>
 
       <div className="product-info">
-        <div>
+        <div className="product-category">{product.category}</div>
+        <div className="product-title-row">
           <div className="product-name">{product.title}</div>
-          <div className="product-category">{product.category}</div>
-        </div>
-        <div className="product-price" style={{ textAlign: "right" }}>
-          {product.compareAt && product.compareAt > product.price && (
-            <span
-              style={{
-                textDecoration: "line-through",
-                color: "var(--muted)",
-                marginRight: 6,
-                fontSize: 11,
-              }}
-            >
-              ${product.compareAt.toFixed(2)}
-            </span>
-          )}
-          <span>${product.price.toFixed(2)}</span>
+          <div className="product-price">
+            {product.compareAt && product.compareAt > product.price && (
+              <span className="product-price-compare">
+                ${product.compareAt.toFixed(2)}
+              </span>
+            )}
+            <span className="product-price-current">${product.price.toFixed(2)}</span>
+          </div>
         </div>
       </div>
     </Link>

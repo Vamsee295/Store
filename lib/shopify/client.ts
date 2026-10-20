@@ -114,12 +114,22 @@ const PRODUCT_FIELDS = `
 
 function sanitizeProductDescription(raw: string): string {
   if (!raw) return "";
-  return raw
+  const clean = raw
     .replace(/Questions about an option\? Contact [^\s]+ before ordering\./gi, "")
     .replace(/The [“"]White set[”"] option is listed separately; its package contents still need supplier confirmation\./gi, "")
     .replace(/[a-zA-Z0-9._%+-]+@(?:gmail|yahoo|hotmail|outlook)\.[a-zA-Z]{2,}/gi, "care@thirdshelf.store")
-    .replace(/\s{2,}/g, " ")
+    // Fix missing spaces after punctuation (e.g. "desk.Choose" -> "desk. Choose")
+    .replace(/([a-z0-9])\.([A-Z])/g, "$1. $2")
+    // Fix run-on phrases like "selectionChoose" -> "selection. Choose"
+    .replace(/selectionChoose/gi, "selection. Choose")
+    // Format bullet specs cleanly
+    .replace(/organizer Material:/gi, "organizer.\n\n• Material:")
+    .replace(/Slot options:/gi, "\n• Slot options:")
+    .replace(/Colours:/gi, "\n• Colours:")
+    .replace(/Check your selection/gi, "\n\nCheck your selection")
+    .replace(/[ \t]{2,}/g, " ")
     .trim();
+  return clean;
 }
 
 function formatShopifyProduct(p: any): Product {

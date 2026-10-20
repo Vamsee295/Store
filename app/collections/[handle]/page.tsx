@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import {
   getCollectionWithProducts,
   getCandidateCollectionHandles,
-  getProducts,
   shopifyConfigured,
 } from "@/lib/shopify/client";
 import { categories } from "@/lib/products";

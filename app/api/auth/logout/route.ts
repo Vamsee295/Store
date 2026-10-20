@@ -5,6 +5,7 @@ export async function POST() {
   try {
     const cookieStore = await cookies();
     cookieStore.delete("third_shelf_customer_token");
+    cookieStore.delete("third_shelf_fav_state");
     return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json({ error: "Failed to sign out" }, { status: 500 });

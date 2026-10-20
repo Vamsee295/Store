@@ -5,6 +5,7 @@ import {
   getCustomerFavourites,
   addCustomerFavourite,
   removeCustomerFavourite,
+  getFavouritesStorageInfo,
 } from "@/lib/favourites";
 import type { Product } from "@/lib/products";
 
@@ -12,7 +13,8 @@ const isDev = process.env.NODE_ENV === "development";
 
 /**
  * Resolves the authenticated customer ID from the secure HTTP-only session cookie.
- * Returns null if the request is not authenticated.
+ * Strict security rule: Customer ID is NEVER accepted from browser input.
+ * It is exclusively derived from Shopify Storefront API validation of the session token.
  */
 async function resolveCustomerId(): Promise<{ customerId: string | null; isPreview: boolean }> {
   const cookieStore = await cookies();
@@ -25,7 +27,7 @@ async function resolveCustomerId(): Promise<{ customerId: string | null; isPrevi
     }
   }
 
-  // Allow development preview mode if enabled
+  // Allow development preview mode if explicitly enabled in local dev
   const isPreview = Boolean(cookieStore.get("third_shelf_preview_mode")?.value);
   if (isDev && isPreview) {
     return { customerId: "dev-preview-customer", isPreview: true };
@@ -45,12 +47,16 @@ export async function GET() {
       );
     }
 
-    const handles = await getCustomerFavourites(customerId);
+    const cookieStore = await cookies();
+    const cookieBackup = cookieStore.get("third_shelf_fav_state")?.value;
+    const handles = await getCustomerFavourites(customerId, cookieBackup);
 
     // Populate actual products from catalog
     const productPromises = handles.map((h) => getProduct(h));
     const rawProducts = await Promise.all(productPromises);
     const products: Product[] = rawProducts.filter((p): p is Product => Boolean(p));
+
+    const storageInfo = getFavouritesStorageInfo();
 
     return NextResponse.json({
       authenticated: true,
@@ -58,6 +64,7 @@ export async function GET() {
       handles,
       products,
       count: handles.length,
+      storageMode: storageInfo.mode,
     });
   } catch (err) {
     console.error("Favourites GET error:", err);
@@ -83,7 +90,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Product handle is required" }, { status: 400 });
     }
 
-    const handles = await addCustomerFavourite(customerId, handle);
+    const cookieStore = await cookies();
+    const cookieBackup = cookieStore.get("third_shelf_fav_state")?.value;
+    const { handles, signedPayload } = await addCustomerFavourite(customerId, handle, cookieBackup);
+
+    // Set signed HTTP-only cookie for resilient serverless durability
+    cookieStore.set("third_shelf_fav_state", signedPayload, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    });
+
     return NextResponse.json({ success: true, handles, count: handles.length });
   } catch (err) {
     console.error("Favourites POST error:", err);
@@ -114,7 +133,19 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Product handle is required" }, { status: 400 });
     }
 
-    const handles = await removeCustomerFavourite(customerId, handle);
+    const cookieStore = await cookies();
+    const cookieBackup = cookieStore.get("third_shelf_fav_state")?.value;
+    const { handles, signedPayload } = await removeCustomerFavourite(customerId, handle, cookieBackup);
+
+    // Update signed HTTP-only cookie
+    cookieStore.set("third_shelf_fav_state", signedPayload, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    });
+
     return NextResponse.json({ success: true, handles, count: handles.length });
   } catch (err) {
     console.error("Favourites DELETE error:", err);
